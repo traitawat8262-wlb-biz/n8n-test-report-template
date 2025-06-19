@@ -1,0 +1,421 @@
+{
+  "name": "Demo",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 17
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        2000,
+        1400
+      ],
+      "id": "74dc328c-639d-4a21-809b-e59a74ec927e",
+      "name": "Schedule 5pm"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1sk_AjGn7BonAVvgf-hQHYHdRUTQhBJ5ooxPaozDxdEA/edit?gid=604668#gid=604668",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 604668,
+          "mode": "list",
+          "cachedResultName": "Dashboard[Raw Data]",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sk_AjGn7BonAVvgf-hQHYHdRUTQhBJ5ooxPaozDxdEA/edit#gid=604668"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2360,
+        1400
+      ],
+      "id": "2183deb0-1072-457e-aad7-4e966b11f22c",
+      "name": "Get Data From Google Sheet",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "IacAwJYjRbxthTwr",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "traitawat@welovebug.biz, nantiya@welovebug.biz, prathan@scrum123.com, prathan@welovebug.biz",
+        "subject": "=<CLIENT> Daily Test Execution Progress Report ",
+        "message": "={{ $json.html }}",
+        "options": {
+          "senderName": "Automation Bot"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        3440,
+        1400
+      ],
+      "id": "b3e57e90-ff6e-4d14-a0fc-ae77a8e12e7f",
+      "name": "Send Test Report",
+      "webhookId": "9156f90e-3070-4a54-95b5-290cebc0bfaf",
+      "alwaysOutputData": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "DFgtICEMhonkS0HK",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "function generateDashboardHTML(data) {\n    // Default values for when data is not provided\n    const projectName = data?.projectName || \"Test Progress Status\";\n    const startDate = $('Get Data From Google Sheet').first().json['Start Date'] || \"\";\n    const endDate = $('Get Data From Google Sheet').first().json[\"End Date\"] || \"\";\n    const totalTS = $('Get Data From Google Sheet').first().json[\"Total Test Scenarios\"] || \"\";\n    const planned = $('Get Data From Google Sheet').first().json.Planned || \"\";\n    const plannedPercent = $('Get Data From Google Sheet').first().json[\"Planned (%)\"] || \"0.00%\";\n  \n    // Detailed status breakdown\n    const pass = $('Get Data From Google Sheet').first().json.Pass || \"0\";\n    const cancelled = $('Get Data From Google Sheet').first().json.Cancelled || \"0\";\n    const executing = $('Get Data From Google Sheet').first().json.Excuting || \"0\";\n    const failed = $('Get Data From Google Sheet').first().json.Failed || \"0\";\n    const deferred = $('Get Data From Google Sheet').first().json.Deferred || \"0\";\n    const block = $('Get Data From Google Sheet').first().json.Block || \"0\";\n    const noRun = $('Get Data From Google Sheet').first().json[\"No Run\"] || \"0\";\n    const completed = $('Get Data From Google Sheet').first().json.Completed || \"0\";\n    const completedPercent = $('Get Data From Google Sheet').first().json[\"Completed (%)\"] || \"\";\n    const productivity = $('Get Data From Google Sheet').first().json.Productivity || \"\";\n  \n    // Status breakdown data\n    const completedTotal = $('Get Data From Google Sheet').first().json.Completed || \"0\";\n    const completedTotalPercent = $('Get Data From Google Sheet').first().json[\"Completed (%)\"] || \"0\";\n    const inProgressTotal = $('Get Data From Google Sheet').first().json[\"In Progress\"] || \"0\";\n    const inProgressTotalPercent = $('Get Data From Google Sheet').first().json[\"In Progress (%)\"] || \"0\";\n    const failedTotal = $('Get Data From Google Sheet').first().json.Failed || \"0\";\n    const failedTotalPercent = $('Get Data From Google Sheet').first().json[\"Failed (%)\"] || \"0\";\n    const notStartTotal = Number(block) + Number(noRun);\n    const notStartTotalPercent = $('Get Data From Google Sheet').first().json[\"Not Start (%)\"] || \"0\";\n  \n    // Defects and issues (defaulting to 0 as per second template)\n    const totalDefects = $('Get Data From Google Sheet').first().json[\"Total Defect\"] || \"0\";\n    const totalIssues = $('Get Data From Google Sheet').first().json[\"Total Issue\"] || \"0\";\n  \n    // Defect breakdown\n    const defectInvestigation = $('Get Data From Google Sheet').first().json.Investigation || \"0\";\n    const defectFixing = $('Get Data From Google Sheet').first().json.Fixing || \"0\";\n    const defectDeployment = $('Get Data From Google Sheet').first().json.Deployment || \"0\";\n    const defectRetesting = $('Get Data From Google Sheet').first().json.Retesting || \"0\";\n    const defectClosed = $('Get Data From Google Sheet').first().json.Closed || \"0\";\n    const defectCancelled = $('Get Data From Google Sheet').first().json.Cancelled || \"0\";\n  \n    // Issue breakdown\n    const issueInvestigation = $('Get Data From Google Sheet').first().json[\"Total Issue\"] || \"0\";\n    const issueSolved = $('Get Data From Google Sheet').first().json.Solved || \"0\";\n\n    // Image URL\n    const graphImageUrl = $input.first().json.webContentLink;\n  \n    return `<!DOCTYPE html>\n    <html lang=\"en\">\n    <head>\n        <meta charset=\"UTF-8\">\n        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n        <title>Test Execution Progress Status Dashboard</title>\n        <style>\n            body \n            {\n                margin: 0;\n                padding: 0;\n                font-family: Sarabun, sans-serif;\n                vertical-align: middle;\n                text-align: center;\n            }\n\n            .container \n            {\n                display: flex;\n                flex-wrap: wrap;\n                width: 100%;\n            }\n\n            .header \n            {\n                width: 100%;\n                margin-bottom: 10px;\n            }\n\n            .left-column \n            {\n                width: 30%;\n                padding-right: 10px;\n                box-sizing: border-box;\n            }\n\n            .right-column \n            {\n                width: 70%;\n                box-sizing: border-box;\n                margin: auto;\n            }\n\n            .main-header-row th {\n                text-align: center;\n                padding: 10px;\n                font-size: 16px;\n                font-size: 2.5 vw;\n                background-color: rgb(75, 160, 224);\n                color: white;\n                text-align: center;\n                \n            }\n\n            table \n            {\n                width: 100%;\n                table-layout: fixed;\n                border-collapse: collapse;\n                margin-bottom: 5px;\n                border: 1px solid #ddd;\n            }\n\n            th\n            {\n                background-color: rgb(75, 160, 224);\n                color: white;\n                text-align: center; \n                padding: 6px; \n                font-size: 14px;\n                font-size: 2 vw; \n                border: 1px solid #ddd;\n                font-weight: normal;\n            }\n\n            td \n            {\n                border: 1px solid #ddd;\n                padding: 6px;\n                font-size: 18px;\n                font-size: 2.5 vw; \n                font-weight: bold;\n                text-align: center; \n            }\n\n\n            td.normal-text\n            {\n                font-size: 14px;\n                font-size: 2 vw; \n                font-weight: normal;\n                text-align: center;\n            }\n\n            th.half-width, tr.half-width td \n            {\n                width: 50%;\n            }\n            \n            .on-track \n            {\n                background-color: #4CAF50;\n                color: white;\n                text-align: center;\n                font-weight: bold;\n            }\n\n            .completion-status \n            {\n                \n                color: white;\n                text-align: center;\n                font-weight: bold;\n            }\n\n            .sub-status-header\n            {\n                background-color: rgb(142, 124, 195);\n            }\n\n            .defect-header \n            {\n                background-color:rgb(254, 121, 121);\n                color: white;\n                text-align: center;\n            }\n\n            .issue-header \n            {\n                background-color:rgb(115, 71, 159);\n                color: white;\n                text-align: center;\n            }\n\n            .positive-value \n            {\n                color: green;\n                font-weight: bold;\n            }\n\n            .chart-container \n            {\n                  width: 100%;\n                  height: 350px;\n                  margin: 0 auto;\n                  border: 1px solid #ffffff;\n                  background-color: #FFFFFF;\n                  position: relative;\n            }\n\n            .chart-placeholder \n            {\n                background-color: #ffffff;\n                height: 100%;\n                display: flex;\n                align-items: center;\n                justify-content: center;\n                text-align: center;\n            }\n  \n                .chart-placeholder img \n                {\n                    max-width: 100%;\n                    max-height: 100%;\n                    width: auto;\n                    height: auto;\n                    display: block;\n                    margin: auto;\n                }\n\n            .bottom-tables \n            {\n                width: 100%;\n                clear: both;\n                margin-top: 10px;\n                padding-top: 10px;\n            }\n  \n            @media (max-width: 768px) {\n                .left-column, .right-column {\n                    width: 100%;\n                    padding: 0;\n                }\n            }\n        </style>\n    </head>\n    <body>\n\n        <!-- Main Header -->\n        <div class=\"header\">\n            <table>\n                <tr class=\"main-header-row\">\n                    <th colspan=\"2\" >${projectName}</th>\n                </tr>\n            </table>\n        </div>\n\n\n         <!-- Two-column Layout for Status Tables and Chart -->\n        <div style=\"display: flex; width: 100%; margin-bottom: 10px;\">\n            <!-- Left Column - Status Tables (30% width) -->\n            <div style=\"width: 30%; box-sizing: border-box;\">\n                <!-- Completion Status -->\n                <table>\n                    <tr>\n                        <th class=\"completion-status\">Completion Status</th>\n                    </tr>\n                    <tr>\n                        <th class=\"on-track\">On-Track</th>\n                    </tr>\n                </table>\n\n                <!-- Date Range -->\n                <table>\n                    <tr>\n                        <th class=\"half-width\">Start Date</th>\n                        <th class=\"half-width\">End Date</th>\n                    </tr>\n                    <tr class=\"half-width\">\n                        <td class=\"normal-text\">${startDate}</td>\n                        <td class=\"normal-text\">${endDate}</td>\n                    </tr>\n                </table>\n\n                <!-- Test Case Counts -->\n                <table>\n                    <tr>\n                        <th class=\"half-width\">Total Test Scenarios</th>\n                        <th class=\"half-width\">Planned</th>\n                    </tr>\n                    <tr class=\"half-width\">\n                        <td>${totalTS}</td>\n                        <td>${planned}${plannedPercent ? \" (\" + plannedPercent + \")\" : \"\"}</td>\n                    </tr>\n                </table>\n\n                <!-- Productivity -->\n                <table class=\"productivity-table\">\n                    <tr>\n                        <th>Completed</th>\n                        <th>Productivity</th>\n                    </tr>\n                    <tr>\n                        <td>${completed}${completedPercent ? \" (\" + completedPercent + \")\" : \"\"}</td>\n                        <td class=\"positive-value\">${productivity}</td>\n                    </tr>\n                </table>\n            </div>\n\n            <!-- Right Column - Chart Area (70% width) -->\n            <div class=\"right-column\">\n              <div class=\"chart-container\">\n                  <div class=\"chart-placeholder\">\n                      <img src=\"${graphImageUrl}\"></img>\n                  </div>\n                  </div>\n            </div>\n\n\n        </div>\n\n\n        <!-- Bottom tables that span full width -->\n        <div class=\"bottom-tables\">\n            <table>\n                <tr>\n                    <th colspan=\"3\">Completed</th>\n                    <th colspan=\"1\">In Progress</th>\n                    <th colspan=\"1\">Failed</th>\n                    <th colspan=\"2\">Not Start</th>\n                </tr>\n                <tr>\n                    <td colspan=\"3\">${completedTotal} (${completedTotalPercent})</td>\n                    <td colspan=\"1\">${inProgressTotal} (${inProgressTotalPercent})</td>\n                    <td colspan=\"1\">${failedTotal} (${failedTotalPercent})</td>\n                    <td colspan=\"2\">${notStartTotal} (${notStartTotalPercent})</td>\n                </tr>\n                <tr>\n                    <th>Pass</th> \n                    <th>Deferred</th>           \n                    <th>Cancelled</th>\n                    <th>Executing</th>\n                    <th>Failed</th>\n                    <th>Block</th>\n                    <th>No Run</th>\n                </tr>\n                <tr>\n                    <td>${pass}</td>\n                    <td>${deferred}</td>\n                    <td>${cancelled}</td>\n                    <td>${executing}</td>\n                    <td>${failed}</td>\n                    <td>${block}</td>\n                    <td>${noRun}</td>\n                </tr>\n            </table>\n\n            <!-- Defects and Issues -->\n            <table>\n                <tr>\n                    <th colspan=\"6\" class=\"defect-header\">Total Defects</th>\n                    <th colspan=\"2\" class=\"issue-header\">Total Issues</th>\n                </tr>\n                <tr>\n                    <td colspan=\"6\">${totalDefects}</td>\n                    <td colspan=\"2\">${totalIssues}</td>\n                </tr>\n                <tr>\n                    <th class=\"defect-header\">Investigation</th>\n                    <th class=\"defect-header\">Fixing</th>\n                    <th class=\"defect-header\">Deployment</th>\n                    <th class=\"defect-header\">Retesting</th>\n                    <th class=\"defect-header\">Closed</th>\n                    <th class=\"defect-header\">Cancelled</th>\n                    <th class=\"issue-header\">Investigation</th>\n                    <th class=\"issue-header\">Solved</th>\n                </tr>\n                <tr>\n                    <td>${defectInvestigation}</td>\n                    <td>${defectFixing}</td>\n                    <td>${defectDeployment}</td>\n                    <td>${defectRetesting}</td>\n                    <td>${defectClosed}</td>\n                    <td>${defectCancelled}</td>\n                    <td>${issueInvestigation}</td>\n                    <td>${issueSolved}</td>\n                </tr>\n            </table>   \n        </div>\n    </body>\n</html>`;\n  }\n  \n  // The main function that n8n will execute\n  function executeNode() {\n    // Get input data from previous nodes if needed\n    const items = $input.all();\n  \n    // Extract data from items if available, or use default values\n    let data = {};\n  \n    // Check if we have items from previous nodes\n    if (items && items.length > 0) {\n      const item = items[0].json; // Get the first item\n  \n      // Map data from the item to our data object\n      data = {\n        // Project info\n        projectName: item.projectName || \"Daily Test Execution Progress Report\",\n        startDate: item.startDate || \"\",\n        endDate: item.endDate || \"\",\n  \n        // Test case data\n        totalTS: item.totalTS || \"\",\n        planned: item.planned || \"\",\n        plannedPercent: item.plannedPercent || \"\",\n        completed: item.completed || \"\",\n        completedPercent: item.completedPercent || \"\",\n        productivity: item.productivity || \"\",\n  \n        // Status breakdown\n        completedTotal: item.completedTotal || \"\",\n        completedTotalPercent: item.completedTotalPercent || \"\",\n        inProgressTotal: item.inProgressTotal || \"\",\n        inProgressTotalPercent: item.inProgressTotalPercent || \"\",\n        failedTotal: item.failedTotal || \"\",\n        failedTotalPercent: item.failedTotalPercent || \"\",\n        notStartTotal: item.notStartTotal || \"\",\n        notStartTotalPercent: item.notStartTotalPercent || \"\",\n  \n        // Detailed breakdown\n        pass: item.pass || \"\",\n        cancelled: item.cancelled || \"\",\n        executing: item.executing || \"\",\n        failed: item.failed || \"\",\n        block: item.block || \"\",\n        noRun: item.noRun || \"\",\n  \n        // Defects and issues\n        totalDefects: item.totalDefects || \"0\",\n        totalIssues: item.totalIssues || \"0\",\n  \n        // Defect breakdown\n        defectInvestigation: item.defectInvestigation || \"0\",\n        defectFixing: item.defectFixing || \"0\",\n        defectDeployment: item.defectDeployment || \"0\",\n        defectRetesting: item.defectRetesting || \"0\",\n        defectClosed: item.defectClosed || \"0\",\n        defectCancelled: item.defectCancelled || \"0\",\n  \n        // Issue breakdown\n        issueInvestigation: item.issueInvestigation || \"0\",\n        issueSolved: item.issueSolved || \"0\",\n      };\n    }\n  \n    // Generate the HTML dashboard with our data\n    const dashboardHTML = generateDashboardHTML(data);\n  \n    // Return data to be passed to the next node\n    return {\n      html: dashboardHTML,\n    };\n  }\n  \n  // Execute the node and return the result\n  return executeNode();\n  "
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3160,
+        1400
+      ],
+      "id": "df0dcd26-4b32-4e6d-b16a-abddefa17bc3",
+      "name": "Generate HTML Test Report"
+    },
+    {
+      "parameters": {
+        "content": "Ready To Use",
+        "height": 1600,
+        "width": 1940,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1880,
+        1200
+      ],
+      "typeVersion": 1,
+      "id": "3d0e1928-94a3-43e6-be82-4f4d9d8bcc26",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vRqeF5O9Pr2rfyd0ccBMyI5q4HoLRfTMqvSmwOOSTL7GqeFmch0IQam75dXApBLIJxgP-M8313w-XJ7/pubchart?oid=905616694&format=image",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Cache-Control",
+              "value": "no-cache, no-store, must-revalidate"
+            },
+            {
+              "name": "Pragma",
+              "value": "no-cache"
+            },
+            {
+              "name": "Expires",
+              "value": "0"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "image"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2620,
+        1400
+      ],
+      "id": "96e461e4-2405-4c8a-ac34-9d91c4c4464c",
+      "name": "Download Image"
+    },
+    {
+      "parameters": {
+        "inputDataFieldName": "image",
+        "name": "={{ $now }}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1UxasKGT9lZRd7ij1toxz_JQGnoLqNDG1",
+          "mode": "list",
+          "cachedResultName": "n8n-file",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1UxasKGT9lZRd7ij1toxz_JQGnoLqNDG1"
+        },
+        "options": {
+          "simplifyOutput": false
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2900,
+        1400
+      ],
+      "id": "ac8f5d99-db9e-4016-b903-c7f23902bfa5",
+      "name": "Google Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Ck3onuRVRRkUcEQv",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const date = new Date();\nconst thaiDate = date.toLocaleDateString('th-TH', {weekday: 'short',day: 'numeric',month: 'short',year: 'numeric'});\nconst row = $input.all().find(item => item.json.row_number === 2);\nconst projName = row?.json?.Project;\nconst total = row?.json?.Planned || 0;\nconst completed= row?.json?.Completed || 0;\nconst percentCompleted= row?.json?.[\"Completed (%)\"]|| 0;\nconst pass= row?.json?.Pass || 0;\nconst deferred= row?.json?.Deferred || 0;\nconst cancelled= row?.json?.Cancelled || 0;\nconst executing= row?.json?.Excuting || 0;\nconst failed= row?.json?.Failed || 0;\nconst remaining= row?.json?.[\"Not start\t\"] || 0;\nconst message = `*${projName} Test Execution Progress – ${thaiDate}*\\n` +\n`*Total Scenarios: ${total}*\\n` +\n`Completed: *${completed} (${percentCompleted})*\\n` +\n  `- Pass: *${pass}*\\n` +\n  `- Deferred: *${deferred}*\\n` +\n  `- Cancelled: *${cancelled}*\\n` +\n`In Progress: *${executing}%*\\n` +\n`Failed: *${failed}*\\n` +\n`Remaining: *${remaining}*\\n\\n`+\n  `*โดย QA และ Dev Team*\\n`+\n  `--------`;\nreturn [{ json: { message } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2620,
+        1900
+      ],
+      "id": "0a5d516e-be1e-4de9-aaa4-1f0ed0c0518b",
+      "name": "Chatroom Message Builder",
+      "executeOnce": true,
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://chat.googleapis.com/v1/spaces/AAAAHpnfoR8/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=WDGUtC7pjeqD8kw5FWm3Ot7Bq2frlTNvUv3icAVa5d0",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ { \"text\": $json.message } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2900,
+        1680
+      ],
+      "id": "5a8101d9-9051-47a0-abf3-7fb5356fc9aa",
+      "name": "Send to Google Chat"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "1372829175936843866",
+          "mode": "list",
+          "cachedResultName": "Look-WLB's server",
+          "cachedResultUrl": "https://discord.com/channels/1372829175936843866"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "1372829231972614144",
+          "mode": "list",
+          "cachedResultName": "n8n",
+          "cachedResultUrl": "https://discord.com/channels/1372829175936843866/1372829231972614144"
+        },
+        "content": "={{ $json.message }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        2900,
+        1900
+      ],
+      "id": "d2ceef33-d9e0-4695-9652-9365e3b24bf1",
+      "name": "Discord Chatroom",
+      "webhookId": "a39215bb-b4bd-4bc2-a32b-1129de66a776",
+      "credentials": {
+        "discordBotApi": {
+          "id": "aTb5kM8Dp4TcM4YI",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C08S87BJNG7",
+          "mode": "list",
+          "cachedResultName": "n8n"
+        },
+        "text": "={{ $json.message }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        2900,
+        2120
+      ],
+      "id": "fb92f6a1-b8d1-42f3-acb8-8b84f614a83d",
+      "name": "Slack chatroom",
+      "webhookId": "80085c6c-9ced-48c3-a2d2-a01a479bdc48",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "Rj7c71A5LoSpMtYo",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer uYm05M+9VueYOgh1Y4R1WD2LmZuvVh+tT/iu1ThWzlTTn7/HZ3xPK4/wHPbRrtPZnx/jabtQCCq6jLrdWR0uMaXZ0Wshv6cI91BUPTBOwsN92ePq1ZOtMrbO7oBogs79c5Q08eInVFEWc/itUlS1pwdB04t89/1O/w1cDnyilFU="
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{\n  {\n    \"to\": \"Cca105d1a0d8b4c8cd79ad0a807fab0ee\",\n    \"messages\": [\n      {\n        \"type\": \"text\",\n        \"text\": $(\"Chatroom Message Builder\").item.json.message\n      }\n    ]\n  }\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2900,
+        2360
+      ],
+      "id": "fced041f-2493-4360-ad0c-f3cb5e270520",
+      "name": "Line"
+    }
+  ],
+  "connections": {
+    "Schedule 5pm": {
+      "main": [
+        [
+          {
+            "node": "Get Data From Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Data From Google Sheet": {
+      "main": [
+        [
+          {
+            "node": "Download Image",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Chatroom Message Builder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate HTML Test Report": {
+      "main": [
+        [
+          {
+            "node": "Send Test Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Image": {
+      "main": [
+        [
+          {
+            "node": "Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Generate HTML Test Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chatroom Message Builder": {
+      "main": [
+        [
+          {
+            "node": "Send to Google Chat",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Discord Chatroom",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Slack chatroom",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Line",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": {
+    "node:Schedule Trigger": {
+      "recurrenceRules": []
+    },
+    "node:Schedule 5pm": {
+      "recurrenceRules": []
+    }
+  },
+  "pinData": {},
+  "triggerCount": 1,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}
